@@ -1,6 +1,6 @@
+
 import type {Metadata} from 'next';
 import './globals.css';
-import { FirebaseClientProvider } from '@/firebase/client-provider';
 
 export const metadata: Metadata = {
   title: 'Nexus | Operational Data Platform',
@@ -23,9 +23,7 @@ export default function RootLayout({
         className="font-body antialiased bg-white text-slate-900 selection:bg-primary/10 selection:text-primary"
         suppressHydrationWarning
       >
-        <FirebaseClientProvider>
-          {children}
-        </FirebaseClientProvider>
+        {children}
       </body>
     </html>
   );

@@ -2,17 +2,6 @@
 "use client";
 
 import React, { useState } from 'react';
-import { 
-  collection, 
-  addDoc, 
-  deleteDoc, 
-  doc, 
-  updateDoc,
-  query,
-  where,
-  getDocs
-} from 'firebase/firestore';
-import { useFirestore, useCollection } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -46,55 +35,42 @@ export function UserManagement() {
   const [email, setEmail] = useState('');
   const [userId, setUserId] = useState('');
   const [userType, setUserType] = useState<'user' | 'admin'>('user');
+  const [users, setUsers] = useState<any[]>([
+    { id: '1', email: 'admin@nexus.com', userId: 'ADMIN_01', role: 'admin' },
+    { id: '2', email: 'manager@factory.com', userId: 'USER_88', role: 'user' }
+  ]);
   const [editingId, setEditingId] = useState<string | null>(null);
   
-  const db = useFirestore();
   const { toast } = useToast();
-  
-  const authorizedUsersQuery = collection(db, 'authorized_users');
-  const { data: authorizedUsers, loading } = useCollection<any>(authorizedUsersQuery);
 
-  const handleInsert = async () => {
+  const handleInsert = () => {
     if (!email || !userId) {
       toast({ title: "Error", description: "Email and User ID are required", variant: "destructive" });
       return;
     }
     
-    try {
-      await addDoc(collection(db, 'authorized_users'), {
-        email,
-        userId,
-        role: userType
-      });
-      toast({ title: "Success", description: "User pre-authorized" });
-      resetForm();
-    } catch (e: any) {
-      toast({ title: "Error", description: e.message, variant: "destructive" });
-    }
+    const newUser = {
+      id: Date.now().toString(),
+      email,
+      userId,
+      role: userType
+    };
+    
+    setUsers(prev => [...prev, newUser]);
+    toast({ title: "Success", description: "User pre-authorized" });
+    resetForm();
   };
 
-  const handleUpdate = async () => {
+  const handleUpdate = () => {
     if (!editingId) return;
-    try {
-      await updateDoc(doc(db, 'authorized_users', editingId), {
-        email,
-        userId,
-        role: userType
-      });
-      toast({ title: "Success", description: "User authorization updated" });
-      resetForm();
-    } catch (e: any) {
-      toast({ title: "Error", description: e.message, variant: "destructive" });
-    }
+    setUsers(prev => prev.map(u => u.id === editingId ? { ...u, email, userId, role: userType } : u));
+    toast({ title: "Success", description: "User authorization updated" });
+    resetForm();
   };
 
-  const handleDelete = async (id: string) => {
-    try {
-      await deleteDoc(doc(db, 'authorized_users', id));
-      toast({ title: "Deleted", description: "User authorization removed" });
-    } catch (e: any) {
-      toast({ title: "Error", description: e.message, variant: "destructive" });
-    }
+  const handleDelete = (id: string) => {
+    setUsers(prev => prev.filter(u => u.id !== id));
+    toast({ title: "Deleted", description: "User authorization removed" });
   };
 
   const startEdit = (user: any) => {
@@ -112,7 +88,7 @@ export function UserManagement() {
   };
 
   return (
-    <div className="w-full max-w-4xl space-y-8">
+    <div className="w-full max-w-4xl mx-auto py-10 px-4 space-y-8">
       <Card className="shadow-xl border-slate-200">
         <CardHeader className="text-center border-b border-slate-50 pb-8">
           <div className="flex justify-center mb-4">
@@ -120,8 +96,8 @@ export function UserManagement() {
               <Database className="text-white h-6 w-6" strokeWidth={1.5} />
             </div>
           </div>
-          <CardTitle className="text-2xl font-headline font-semibold">CRUD with Firebase</CardTitle>
-          <CardDescription>Manage authorized users and system access</CardDescription>
+          <CardTitle className="text-2xl font-headline font-semibold">Admin Access Management</CardTitle>
+          <CardDescription>Manage authorized users and system permissions (Frontend Demo)</CardDescription>
         </CardHeader>
         
         <CardContent className="pt-8 space-y-6">
@@ -147,7 +123,7 @@ export function UserManagement() {
           </div>
           
           <div className="space-y-2">
-            <Label>Select User-Type</Label>
+            <Label>Select User Role</Label>
             <Select value={userType} onValueChange={(val: any) => setUserType(val)}>
               <SelectTrigger>
                 <SelectValue placeholder="Select role" />
@@ -164,7 +140,7 @@ export function UserManagement() {
           <Button variant="default" className="bg-emerald-600 hover:bg-emerald-700 text-white min-w-[100px]" onClick={handleInsert}>
             <Plus className="mr-2 h-4 w-4" /> Insert
           </Button>
-          <Button variant="default" className="bg-amber-500 hover:bg-amber-600 text-white min-w-[100px]" onClick={() => resetForm()}>
+          <Button variant="default" className="bg-amber-500 hover:bg-amber-600 text-white min-w-[100px]" onClick={resetForm}>
             <RefreshCcw className="mr-2 h-4 w-4" /> Reset
           </Button>
           <Button variant="default" className="bg-blue-600 hover:bg-blue-700 text-white min-w-[100px]" onClick={handleUpdate} disabled={!editingId}>
@@ -188,7 +164,7 @@ export function UserManagement() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {authorizedUsers.map((user) => (
+              {users.map((user) => (
                 <TableRow key={user.id}>
                   <TableCell className="font-medium">{user.email}</TableCell>
                   <TableCell>{user.userId}</TableCell>
@@ -203,13 +179,6 @@ export function UserManagement() {
                   </TableCell>
                 </TableRow>
               ))}
-              {authorizedUsers.length === 0 && !loading && (
-                <TableRow>
-                  <TableCell colSpan={4} className="text-center text-slate-400 py-8">
-                    No authorized users found.
-                  </TableCell>
-                </TableRow>
-              )}
             </TableBody>
           </Table>
         </CardContent>

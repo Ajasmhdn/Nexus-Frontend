@@ -1,15 +1,12 @@
+
 "use client";
 
-import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { Send, Terminal, Sparkles, Loader2, Database, AlertCircle, History } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Send, Terminal, Sparkles, Loader2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { generateSqlFromNaturalLanguage } from '@/ai/flows/generate-sql-from-natural-language';
 import { SQLResultTable } from './sql-result-table';
-import { useUser, useFirestore, useCollection } from '@/firebase';
-import { collection, addDoc, serverTimestamp, query, where, orderBy } from 'firebase/firestore';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
 import { cn } from '@/lib/utils';
 
 interface Message {
@@ -19,6 +16,7 @@ interface Message {
   sql?: string;
   results?: any[];
   error?: string;
+  createdAt: number;
 }
 
 const DEFAULT_SCHEMA = `
@@ -42,21 +40,9 @@ CREATE TABLE maintenance_records (
 export function ChatInterface() {
   const [input, setInput] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
-  const { user } = useUser();
-  const db = useFirestore();
+  const [messages, setMessages] = useState<Message[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-  const chatsQuery = useMemo(() => {
-    if (!user || !db) return null;
-    return query(
-      collection(db, 'chats'),
-      where('userId', '==', user.uid),
-      orderBy('createdAt', 'asc')
-    );
-  }, [user, db]);
-
-  const { data: messages } = useCollection<Message>(chatsQuery);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -66,77 +52,53 @@ export function ChatInterface() {
 
   const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (!input.trim() || isProcessing || !user || !db) return;
+    if (!input.trim() || isProcessing) return;
 
-    const userMessage: any = {
+    const userMessage: Message = {
+      id: Date.now().toString(),
       role: 'user',
       content: input,
-      userId: user.uid,
-      createdAt: serverTimestamp()
+      createdAt: Date.now()
     };
 
+    setMessages(prev => [...prev, userMessage]);
     setIsProcessing(true);
+    const queryText = input;
     setInput('');
     if (textareaRef.current) textareaRef.current.style.height = 'auto';
 
     try {
-      // Save user message to Firestore
-      const chatsRef = collection(db, 'chats');
-      addDoc(chatsRef, userMessage).catch(async (err) => {
-        const permissionError = new FirestorePermissionError({
-          path: chatsRef.path,
-          operation: 'create',
-          requestResourceData: userMessage,
-        });
-        errorEmitter.emit('permission-error', permissionError);
-      });
-
-      // Generate SQL
       const result = await generateSqlFromNaturalLanguage({
-        naturalLanguageQuery: input,
+        naturalLanguageQuery: queryText,
         databaseSchema: DEFAULT_SCHEMA
       });
 
-      // Mocking industrial data for visual impact
       const mockResults = [
         { machine_id: 'CNC-01', downtime_minutes: 45, status: 'Completed', technician_name: 'John Doe' },
         { machine_id: 'CNC-02', downtime_minutes: 120, status: 'Maintenance Required', technician_name: 'Sarah Smith' },
         { machine_id: 'LASER-04', downtime_minutes: 15, status: 'Running', technician_name: 'Mike Brown' }
       ];
 
-      const assistantMessage: any = {
+      const assistantMessage: Message = {
+        id: (Date.now() + 1).toString(),
         role: 'assistant',
         content: `I've translated your request into the following SQL query. Based on our current machine logs, here is the analysis:`,
         sql: result.sqlQuery,
         results: mockResults,
-        userId: user.uid,
-        createdAt: serverTimestamp()
+        createdAt: Date.now()
       };
 
-      addDoc(chatsRef, assistantMessage).catch(async (err) => {
-        const permissionError = new FirestorePermissionError({
-          path: chatsRef.path,
-          operation: 'create',
-          requestResourceData: assistantMessage,
-        });
-        errorEmitter.emit('permission-error', permissionError);
-      });
+      setMessages(prev => [...prev, assistantMessage]);
 
     } catch (error: any) {
-      const errorMsg: any = {
+      const errorMsg: Message = {
+        id: (Date.now() + 1).toString(),
         role: 'assistant',
         content: "I encountered an error while processing your request.",
         error: error.message,
-        userId: user.uid,
-        createdAt: serverTimestamp()
+        createdAt: Date.now()
       };
-      addDoc(collection(db, 'chats'), errorMsg).catch(async (err) => {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({
-          path: 'chats',
-          operation: 'create',
-          requestResourceData: errorMsg
-        }));
-      });
+      setMessages(prev => [...prev, errorMsg]);
     } finally {
       setIsProcessing(false);
     }

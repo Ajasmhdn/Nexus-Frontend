@@ -1,36 +1,21 @@
 
 "use client";
 
-import React, { useState } from 'react';
-import { Database, Zap, Shield, BarChart3, ChevronRight, Play, Server, Cpu, Lock } from 'lucide-react';
+import React from 'react';
+import { Database, Zap, Shield, BarChart3, ChevronRight, Play, MessageSquare, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { AuthCenter } from '@/components/auth/auth-center';
 
-export function LandingPage() {
-  const [showAuth, setShowAuth] = useState(false);
+interface LandingPageProps {
+  onNavigate: (view: 'landing' | 'chat' | 'admin') => void;
+}
 
-  if (showAuth) {
-    return (
-      <div className="relative min-h-screen flex items-center justify-center bg-slate-50">
-        <Button 
-          variant="ghost" 
-          className="absolute top-8 left-8 text-slate-500 hover:text-slate-900"
-          onClick={() => setShowAuth(false)}
-        >
-          <ChevronRight className="rotate-180 mr-2 h-4 w-4" />
-          Back to Home
-        </Button>
-        <AuthCenter />
-      </div>
-    );
-  }
-
+export function LandingPage({ onNavigate }: LandingPageProps) {
   return (
     <div className="min-h-screen bg-white text-slate-900 font-body overflow-x-hidden">
       {/* Navigation */}
       <nav className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-md border-b border-slate-100">
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 cursor-pointer" onClick={() => onNavigate('landing')}>
             <div className="h-10 w-10 rounded-xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20">
               <Database className="text-white h-6 w-6" strokeWidth={1.5} />
             </div>
@@ -38,12 +23,14 @@ export function LandingPage() {
           </div>
           <div className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-600">
             <a href="#features" className="hover:text-primary transition-colors">Features</a>
-            <a href="#solutions" className="hover:text-primary transition-colors">Solutions</a>
-            <a href="#compliance" className="hover:text-primary transition-colors">Compliance</a>
+            <a href="#roadmap" className="hover:text-primary transition-colors">How it Works</a>
+            <Button variant="ghost" className="text-slate-600 hover:text-primary" onClick={() => onNavigate('chat')}>
+              <MessageSquare className="mr-2 h-4 w-4" /> Chat
+            </Button>
           </div>
           <div className="flex items-center gap-4">
-            <Button variant="ghost" className="font-semibold" onClick={() => setShowAuth(true)}>Log in</Button>
-            <Button className="bg-primary hover:bg-primary/90 text-white shadow-xl" onClick={() => setShowAuth(true)}>
+            <Button variant="outline" className="border-slate-200" onClick={() => onNavigate('chat')}>Launch App</Button>
+            <Button className="bg-primary hover:bg-primary/90 text-white shadow-xl" onClick={() => onNavigate('admin')}>
               <Lock className="mr-2 h-4 w-4" /> Admin
             </Button>
           </div>
@@ -65,8 +52,8 @@ export function LandingPage() {
               Query massive operational datasets using plain English. Nexus maps complex industrial schemas to accurate SQL queries in seconds.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 pt-4">
-              <Button size="lg" className="h-14 px-8 bg-primary hover:bg-primary/90 text-white rounded-xl shadow-2xl shadow-primary/20 text-lg font-semibold" onClick={() => setShowAuth(true)}>
-                <Lock className="mr-2 h-5 w-5" /> Admin Portal
+              <Button size="lg" className="h-14 px-8 bg-primary hover:bg-primary/90 text-white rounded-xl shadow-2xl shadow-primary/20 text-lg font-semibold" onClick={() => onNavigate('chat')}>
+                Start Chatting
               </Button>
               <Button size="lg" variant="outline" className="h-14 px-8 border-slate-200 hover:bg-slate-50 rounded-xl text-lg font-semibold">
                 <Play className="mr-2 h-4 w-4 fill-slate-900" /> Watch Demo
