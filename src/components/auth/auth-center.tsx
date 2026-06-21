@@ -5,7 +5,8 @@ import React, { useState } from 'react';
 import { 
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword,
-  signOut
+  signOut,
+  deleteUser
 } from 'firebase/auth';
 import { useAuth, useFirestore } from '@/firebase';
 import { doc, getDoc, setDoc, query, collection, where, getDocs } from 'firebase/firestore';
@@ -42,30 +43,45 @@ export function AuthCenter() {
           throw new Error("User profile not found. Please contact admin.");
         }
       } else {
-        // Sign up constraint: User ID must exist in authorized_users
+        // Sign up logic:
+        // 1. Create the user in Firebase Auth first (to get a UID and be authenticated)
         if (!userId) throw new Error("User ID is required for sign-up.");
         
-        const authQuery = query(
-          collection(db, 'authorized_users'), 
-          where('userId', '==', userId),
-          where('email', '==', email)
-        );
-        const authSnap = await getDocs(authQuery);
-        
-        if (authSnap.empty) {
-          throw new Error("Unauthorized User ID or Email. Please contact your administrator.");
-        }
-
-        const authData = authSnap.docs[0].data();
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        
-        // Create user profile in Firestore
-        await setDoc(doc(db, 'users', userCredential.user.uid), {
-          email,
-          userId,
-          role: authData.role || 'user',
-          createdAt: new Date().toISOString()
-        });
+        const user = userCredential.user;
+
+        try {
+          // 2. Now as an authenticated user, check the authorization whitelist
+          const authQuery = query(
+            collection(db, 'authorized_users'), 
+            where('userId', '==', userId),
+            where('email', '==', email)
+          );
+          const authSnap = await getDocs(authQuery);
+          
+          if (authSnap.empty) {
+            // Cleanup: delete the auth user if not on the whitelist
+            await deleteUser(user);
+            throw new Error("Unauthorized User ID or Email. Please contact your administrator.");
+          }
+
+          const authData = authSnap.docs[0].data();
+          
+          // 3. Create user profile in Firestore
+          await setDoc(doc(db, 'users', user.uid), {
+            email,
+            userId,
+            role: authData.role || 'user',
+            createdAt: new Date().toISOString()
+          });
+
+          toast({ title: "Welcome!", description: "Your account has been created successfully." });
+
+        } catch (innerError: any) {
+          // If authorization check fails, sign out the user
+          await signOut(auth);
+          throw innerError;
+        }
       }
     } catch (error: any) {
       toast({
