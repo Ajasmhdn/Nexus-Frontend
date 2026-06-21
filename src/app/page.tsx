@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useUser, useFirestore, useDoc } from '@/firebase';
@@ -43,8 +42,9 @@ export default function Home() {
   const auth = useAuth();
   
   // Use a stable document reference for the user's profile
+  // Only create the ref if we have a user to avoid rule errors
   const userProfileRef = user ? doc(db, 'users', user.uid) : null;
-  const { data: profile, loading: profileLoading } = useDoc<any>(userProfileRef);
+  const { data: profile, loading: profileLoading, error: profileError } = useDoc<any>(userProfileRef);
 
   if (loading || (user && profileLoading)) {
     return (
@@ -67,7 +67,6 @@ export default function Home() {
   }
 
   // If user is logged in but no profile exists, they might be in the middle of signup
-  // or they might have bypassed signup checks somehow.
   if (user && !profile && !profileLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white p-6">
