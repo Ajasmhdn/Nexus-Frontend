@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -47,9 +46,18 @@ export function AppSidebar({ onNavigate, activeView }: AppSidebarProps) {
         const res = await recommendPromptsFromSchema({
           databaseSchema: "machine_logs, maintenance_records, technicians"
         });
-        setRecommendations(res.recommendedPrompts.slice(0, 4));
+        if (res && res.recommendedPrompts) {
+          setRecommendations(res.recommendedPrompts.slice(0, 4));
+        }
       } catch (e) {
-        console.error(e);
+        console.error("Sidebar AI Error:", e);
+        // Fallback prompts if the server action itself fails beyond the flow's internal catch
+        setRecommendations([
+          "Downtime trends last 24h",
+          "Machine health summary",
+          "Recent work orders",
+          "Technician load balance"
+        ]);
       } finally {
         setLoadingPrompts(false);
       }
@@ -152,7 +160,7 @@ export function AppSidebar({ onNavigate, activeView }: AppSidebarProps) {
             <Avatar className="h-9 w-9 border border-slate-200">
               <AvatarFallback className="bg-slate-100 text-slate-600 font-bold uppercase text-xs">U</AvatarFallback>
             </Avatar>
-            <div className={cn("flex flex-col transition-opacity", state === 'collapsed' ? 'opacity-0 w-0' : 'opacity-100')}>
+            <div className={cn("flex flex-col transition-opacity", state === 'collapsed' ? 'opacity-0' : 'opacity-100')}>
               <span className="text-sm font-semibold text-slate-900 truncate max-w-[120px]">Demo User</span>
               <span className="text-[10px] text-slate-500 uppercase tracking-tight">Enterprise Tier</span>
             </div>

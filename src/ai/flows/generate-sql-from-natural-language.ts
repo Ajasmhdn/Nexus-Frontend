@@ -59,7 +59,15 @@ const generateSqlFromNaturalLanguageFlow = ai.defineFlow(
     outputSchema: GeneratedSQLOutputSchema,
   },
   async input => {
-    const {output} = await prompt(input);
-    return output!;
+    try {
+      const {output} = await prompt(input);
+      return output!;
+    } catch (error: any) {
+      console.warn("Genkit Quota Exceeded or Error in generateSqlFromNaturalLanguageFlow. Using fallbacks.", error.message);
+      // Return a plausible SQL comment/query fallback if the AI fails
+      return {
+        sqlQuery: `-- AI Model Quota Exceeded. Please try again later.\nSELECT * FROM machine_logs ORDER BY log_timestamp DESC LIMIT 10;`
+      };
+    }
   }
 );

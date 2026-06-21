@@ -42,8 +42,22 @@ const recommendPromptsFromSchemaFlow = ai.defineFlow(
     outputSchema: RecommendPromptsFromSchemaOutputSchema
   },
   async (input) => {
-    const {output} = await recommendPromptsPrompt(input);
-    return output!;
+    try {
+      const {output} = await recommendPromptsPrompt(input);
+      return output!;
+    } catch (error: any) {
+      console.warn("Genkit Quota Exceeded or Error in recommendPromptsFromSchemaFlow. Using fallbacks.", error.message);
+      // Fallback data to prevent UI crash when API quota is hit
+      return {
+        recommendedPrompts: [
+          "Compare MTTR trends by machine shift",
+          "Identify machines with highest maintenance frequency",
+          "List all pending work orders for today",
+          "Average downtime minutes per machine category",
+          "Summarize technician performance for the last quarter"
+        ]
+      };
+    }
   }
 );
 
