@@ -1,3 +1,4 @@
+
 'use client';
 
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
@@ -15,6 +16,7 @@ export function initializeFirebase(): {
   auth: Auth;
 } {
   if (!app) {
+    // Standard singleton pattern for Next.js to prevent multiple initializations
     app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
     firestore = getFirestore(app);
     auth = getAuth(app);

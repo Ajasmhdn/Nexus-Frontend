@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useUser, useFirestore, useDoc } from '@/firebase';
@@ -41,22 +42,23 @@ export default function Home() {
   const db = useFirestore();
   const auth = useAuth();
   
-  // Use a stable document reference for the user's profile
-  // Only create the ref if we have a user to avoid rule errors
-  const userProfileRef = user ? doc(db, 'users', user.uid) : null;
+  // Only attempt to fetch profile if we have a user and the db is ready
+  const userProfileRef = (user && db) ? doc(db, 'users', user.uid) : null;
   const { data: profile, loading: profileLoading, error: profileError } = useDoc<any>(userProfileRef);
 
-  if (loading || (user && profileLoading)) {
+  // Initial auth loading
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="h-10 w-10 animate-spin text-primary" strokeWidth={1.5} />
-          <span className="text-sm font-medium text-slate-400 animate-pulse uppercase tracking-widest">Initializing Nexus...</span>
+          <span className="text-sm font-medium text-slate-400 animate-pulse uppercase tracking-widest">Nexus Auth...</span>
         </div>
       </div>
     );
   }
 
+  // Not logged in -> Landing
   if (!user) {
     return (
       <>
@@ -66,8 +68,20 @@ export default function Home() {
     );
   }
 
-  // If user is logged in but no profile exists, they might be in the middle of signup
-  if (user && !profile && !profileLoading) {
+  // Logged in but profile is still loading
+  if (profileLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-10 w-10 animate-spin text-primary" strokeWidth={1.5} />
+          <span className="text-sm font-medium text-slate-400 animate-pulse uppercase tracking-widest">Loading Profile...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Logged in but no profile found (and not loading anymore)
+  if (!profile && !profileLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white p-6">
         <div className="max-w-md w-full text-center space-y-6">
@@ -92,6 +106,7 @@ export default function Home() {
     );
   }
 
+  // Route based on role
   return (
     <>
       {profile?.role === 'admin' ? <AdminDashboard /> : <Dashboard />}
