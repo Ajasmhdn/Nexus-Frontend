@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "Message": {
@@ -14,6 +15,29 @@
         "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp when the message was created." }
       },
       "required": ["userId", "role", "content", "createdAt"]
+    },
+    "User": {
+      "title": "User Profile",
+      "description": "User metadata and role information.",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "user"] },
+        "userId": { "type": "string", "description": "The custom User ID assigned by an admin." },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["email", "role", "userId"]
+    },
+    "AuthorizedUser": {
+      "title": "Authorized User",
+      "description": "A User ID pre-authorized by an admin to join the platform.",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" },
+        "userId": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "user"] }
+      },
+      "required": ["email", "userId", "role"]
     }
   },
   "auth": {
@@ -23,6 +47,14 @@
     "/chats/{chatId}": {
       "schema": "#/entities/Message",
       "description": "Collection of chat messages for the operational assistant."
+    },
+    "/users/{uid}": {
+      "schema": "#/entities/User",
+      "description": "User profiles and roles."
+    },
+    "/authorized_users/{docId}": {
+      "schema": "#/entities/AuthorizedUser",
+      "description": "Whitelist of allowed users."
     }
   }
 }

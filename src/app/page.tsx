@@ -1,12 +1,15 @@
+
 "use client";
 
-import { useUser } from '@/firebase';
+import { useUser, useFirestore, useDoc } from '@/firebase';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/layout/app-sidebar';
 import { ChatInterface } from '@/components/chat/chat-interface';
 import { LandingPage } from '@/components/landing/landing-page';
 import { Toaster } from '@/components/ui/toaster';
+import { UserManagement } from '@/components/admin/user-management';
 import { Loader2 } from 'lucide-react';
+import { doc } from 'firebase/firestore';
 
 function Dashboard() {
   return (
@@ -23,10 +26,23 @@ function Dashboard() {
   );
 }
 
+function AdminDashboard() {
+  return (
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+      <UserManagement />
+    </div>
+  );
+}
+
 export default function Home() {
   const { user, loading } = useUser();
+  const db = useFirestore();
+  
+  // Use a stable document reference for the user's profile
+  const userProfileRef = user ? doc(db, 'users', user.uid) : null;
+  const { data: profile, loading: profileLoading } = useDoc<any>(userProfileRef);
 
-  if (loading) {
+  if (loading || (user && profileLoading)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="flex flex-col items-center gap-4">
@@ -37,9 +53,18 @@ export default function Home() {
     );
   }
 
+  if (!user) {
+    return (
+      <>
+        <LandingPage />
+        <Toaster />
+      </>
+    );
+  }
+
   return (
     <>
-      {!user ? <LandingPage /> : <Dashboard />}
+      {profile?.role === 'admin' ? <AdminDashboard /> : <Dashboard />}
       <Toaster />
     </>
   );
