@@ -1,3 +1,9 @@
 
-// Firebase disabled for UI development
-export class FirestorePermissionError extends Error {}
+/**
+ * @fileOverview Mock exception classes for UI focus.
+ */
+export class FirestorePermissionError extends Error {
+  constructor(info: any) {
+    super(`Permission denied: ${JSON.stringify(info)}`);
+  }
+}

@@ -9,6 +9,11 @@ import { LandingPage } from '@/components/landing/landing-page';
 import { Toaster } from '@/components/ui/toaster';
 import { UserManagement } from '@/components/admin/user-management';
 
+/**
+ * Root Application Component
+ * Manages the top-level view state (Landing, Chat, or Admin CRUD).
+ * Completely decoupled from Firebase, using pure React state for navigation.
+ */
 export default function Home() {
   const [view, setView] = useState<'landing' | 'chat' | 'admin'>('landing');
 

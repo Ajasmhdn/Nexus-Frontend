@@ -1,6 +1,6 @@
 
 /**
- * Firebase is disabled for pure UI focus.
+ * @fileOverview Firebase services disabled for pure UI development.
  */
 export const auth = null;
 export const db = null;

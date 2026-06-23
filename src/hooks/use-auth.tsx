@@ -3,6 +3,11 @@
 
 import React, { createContext, useContext, useState } from 'react';
 
+/**
+ * Mock Authentication Hook
+ * Provides a UI-only representation of a logged-in user without any Firebase dependency.
+ */
+
 interface AuthContextType {
   user: any | null;
   loading: boolean;
@@ -17,11 +22,16 @@ const AuthContext = createContext<AuthContextType>({
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   // Mock auth state for UI development
-  const [user, setUser] = useState<any | null>({ email: 'demo@nexus.com', role: 'admin' });
-  const [loading, setLoading] = useState(false);
+  const [user] = useState<any | null>({ 
+    email: 'demo@nexus.ai', 
+    role: 'admin', 
+    userId: 'NX_ADMIN_01' 
+  });
+  const [loading] = useState(false);
 
   const logout = async () => {
-    setUser(null);
+    // In a real app, this would clear tokens. For UI demo, we keep the state static or refresh.
+    window.location.reload();
   };
 
   return (
