@@ -2,14 +2,6 @@
 "use client";
 
 import React, { useState } from 'react';
-import { 
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword,
-  signOut,
-  deleteUser
-} from 'firebase/auth';
-import { useAuth, useFirestore } from '@/firebase';
-import { doc, getDoc, setDoc, query, collection, where, getDocs } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -23,75 +15,20 @@ export function AuthCenter() {
   const [password, setPassword] = useState('');
   const [userId, setUserId] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const auth = useAuth();
-  const db = useFirestore();
   const { toast } = useToast();
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    try {
-      if (isLogin) {
-        // Sign in
-        const userCredential = await signInWithEmailAndPassword(auth, email, password);
-        
-        // Fetch user profile to ensure routing works
-        const profileSnap = await getDoc(doc(db, 'users', userCredential.user.uid));
-        if (!profileSnap.exists()) {
-          // If profile missing but auth exists, something is wrong
-          await signOut(auth);
-          throw new Error("User profile not found. Please contact admin.");
-        }
-      } else {
-        // Sign up logic:
-        // 1. Create the user in Firebase Auth first (to get a UID and be authenticated)
-        if (!userId) throw new Error("User ID is required for sign-up.");
-        
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        const user = userCredential.user;
-
-        try {
-          // 2. Now as an authenticated user, check the authorization whitelist
-          const authQuery = query(
-            collection(db, 'authorized_users'), 
-            where('userId', '==', userId),
-            where('email', '==', email)
-          );
-          const authSnap = await getDocs(authQuery);
-          
-          if (authSnap.empty) {
-            // Cleanup: delete the auth user if not on the whitelist
-            await deleteUser(user);
-            throw new Error("Unauthorized User ID or Email. Please contact your administrator.");
-          }
-
-          const authData = authSnap.docs[0].data();
-          
-          // 3. Create user profile in Firestore
-          await setDoc(doc(db, 'users', user.uid), {
-            email,
-            userId,
-            role: authData.role || 'user',
-            createdAt: new Date().toISOString()
-          });
-
-          toast({ title: "Welcome!", description: "Your account has been created successfully." });
-
-        } catch (innerError: any) {
-          // If authorization check fails, sign out the user
-          await signOut(auth);
-          throw innerError;
-        }
-      }
-    } catch (error: any) {
-      toast({
-        title: "Authentication Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
+    
+    // Pure UI Mock Logic
+    setTimeout(() => {
       setIsLoading(false);
-    }
+      toast({ 
+        title: isLogin ? "Success" : "Welcome!", 
+        description: isLogin ? "Logged in successfully (UI Demo)" : "Your account has been created (UI Demo)" 
+      });
+    }, 1000);
   };
 
   return (

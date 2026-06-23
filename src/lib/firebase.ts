@@ -1,10 +1,6 @@
 
 /**
- * DEPRECATED: Use initialization from @/firebase instead.
- * This file is kept as a proxy to prevent breakages while migrating.
+ * Firebase is disabled for pure UI focus.
  */
-import { initializeFirebase } from '@/firebase';
-
-const { auth, firestore: db } = initializeFirebase();
-
-export { auth, db };
+export const auth = null;
+export const db = null;
